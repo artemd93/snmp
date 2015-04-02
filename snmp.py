@@ -143,3 +143,7 @@ class Snmp(object):
             return 'Query OK'
         else:
             return 'Query ERROR'
+
+if __name__ == '__main__':
+
+    print('To be defined')
