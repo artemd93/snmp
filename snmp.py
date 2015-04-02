@@ -69,3 +69,77 @@ class SnmpBased(object):
         for port in self.ports_status:
             if self.ports_status[port] == 'down':
                 print('Port %s in administratively down' % port)
+
+   def reset(self):
+        self.set('down')
+        self.set('up')
+
+    def save(self):
+        if self.SWITCH == 'DES-1210-52':
+            oid = OID.save_52
+        elif self.SWITCH == 'DES-1210-28':
+            oid = OID.save_28
+        else:
+            raise SnmpErrorException('Wrong switch name')
+
+        self.set_st = self.snmpobj.snmp(oid, netsnmp.snmpset,
+                                        val='0', status=1)
+        self.set_st = set_decode(self.set_st)
+
+    def restart(self):
+        if self.SWITCH == 'DES-1210-52':
+            oid = OID.restart_52
+        elif self.SWITCH == 'DES-1210-28':
+            oid = OID.restart_28
+        else:
+            raise SnmpErrorException('Wrong switch name')
+
+        self.set_st = self.snmpobj.snmp(oid, netsnmp.snmpset,
+                                        val='0', status=1)
+        self.set_st = set_decode(self.set_st)
+
+    def get_ports_count(self):
+        if self.SWITCH == 'DES-1210-52':
+            self.ports_count = 48
+        elif self.SWITCH == 'DES-1210-28':
+            self.ports_count = 24
+        else:
+            raise SnmpErrorException('Wrong switch name')
+            
+    def __unicode__(self):
+        sep = '=' * 28
+        str_form = '%s\n%s\nSWITCH: %s PORT: %s\n' % (sep,
+                                                      self.SWITCH,
+                                                      self.IP,
+                                                      self.PORT)
+        for attr in Data.attrs:
+            if hasattr(self, attr):
+                str_form += '%s %s\n' % (Data.attrs[attr],
+                                         getattr(self, attr))
+        return str_form + sep
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+
+class Snmp(object):
+    def __init__(self, host='localhost', version=1, community='public'):
+        self.host = host
+        self.version = version
+        self.community = community
+
+    def snmp(self, oid, snmpx, val=False, status=False):
+        if snmpx is netsnmp.snmpset:
+            oid = netsnmp.Varbind(oid, val, status, 'INTEGER')
+        else:
+            oid = netsnmp.Varbind(oid)
+        res = snmpx(oid, Version=self.version, DestHost=self.host,
+                    Community=self.community)
+        self.last_query = res
+        return res
+
+    def __str__(self):
+        if self.last_query == 1:
+            return 'Query OK'
+        else:
+            return 'Query ERROR'
