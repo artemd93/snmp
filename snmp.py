@@ -33,3 +33,39 @@ class SnmpBased(object):
         oid = OID.adm_st + '.' + port
         adm_st = self.snmpobj.snmp(oid, netsnmp.snmpget)[0]
         self.adm_st = translate(adm_st)
+    
+    def get_oper(self, port):
+        oid = OID.oper_st + '.' + port
+        oper_st = self.snmpobj.snmp(oid, netsnmp.snmpget)[0]
+        self.oper_st = translate(oper_st)
+
+    def getall(self, st_type='oper'):
+        self.ports_status = dict()
+        for port in range(1, self.ports_count+1):
+            self.ports_status[port] = self.get(st_type, str(port))
+
+    def set(self, state, port=''):
+        if not port:
+            port = self.PORT
+        oid = OID.adm_st
+        if state == 'down':
+            status = 2
+        else:
+            status = 1
+
+        self.snmpobj.snmp(oid, netsnmp.snmpset, val=port,
+                          status=status)
+        self.set_st = str(self.snmpobj)
+
+    def setall(self, state):
+        for port in range(1, self.ports_count+1):
+            print port
+            self.set(state, str(port))
+            if not self.set_st == 'Query OK':
+                print('Port %s FAILED') % port
+
+    def verify(self):
+        self.getall('adm')
+        for port in self.ports_status:
+            if self.ports_status[port] == 'down':
+                print('Port %s in administratively down' % port)
