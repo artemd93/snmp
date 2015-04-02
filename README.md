@@ -1,4 +1,3 @@
 # snmp
-Snmp queries fraemwork
 
-Based on netsnmp
+Alpha features for master branch. Untested
